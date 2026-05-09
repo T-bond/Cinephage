@@ -242,10 +242,13 @@ export class SearchOrchestrator {
 			'Starting search orchestration'
 		);
 
-		// Enrich criteria with missing IDs (e.g., look up IMDB ID from TMDB ID)
-		const enrichedCriteria = await this.enrichCriteriaWithIds(criteriaWithSource);
+		const [enrichedCriteria, indexerFilterResult] = await Promise.all([
+			this.enrichCriteriaWithIds(criteriaWithSource),
+			this.filterIndexers(indexers, criteriaWithSource, opts)
+		]);
 
-		// Check cache first (use enriched criteria for cache key)
+		const { eligible: eligibleIndexers, rejected: rejectedIndexers } = indexerFilterResult;
+
 		if (opts.useCache) {
 			const cached = this.cache.get(enrichedCriteria);
 			if (cached) {
@@ -259,13 +262,6 @@ export class SearchOrchestrator {
 				};
 			}
 		}
-
-		// Filter indexers (use enriched criteria for eligibility check)
-		const { eligible: eligibleIndexers, rejected: rejectedIndexers } = this.filterIndexers(
-			indexers,
-			enrichedCriteria,
-			opts
-		);
 
 		if (eligibleIndexers.length === 0) {
 			logger.warn(
@@ -371,8 +367,12 @@ export class SearchOrchestrator {
 			'Starting enhanced search orchestration'
 		);
 
-		// Enrich criteria with missing IDs (e.g., look up IMDB ID from TMDB ID)
-		const enrichedCriteria = await this.enrichCriteriaWithIds(criteriaWithSource);
+		const [enrichedCriteria, indexerFilterResult] = await Promise.all([
+			this.enrichCriteriaWithIds(criteriaWithSource),
+			this.filterIndexers(indexers, criteriaWithSource, opts)
+		]);
+
+		const { eligible: eligibleIndexers, rejected: rejectedIndexers } = indexerFilterResult;
 
 		if (opts.useCache) {
 			const cached = this.cache.get(enrichedCriteria);
@@ -393,12 +393,6 @@ export class SearchOrchestrator {
 				};
 			}
 		}
-
-		const { eligible: eligibleIndexers, rejected: rejectedIndexers } = this.filterIndexers(
-			indexers,
-			enrichedCriteria,
-			opts
-		);
 
 		if (eligibleIndexers.length === 0) {
 			logger.warn(
